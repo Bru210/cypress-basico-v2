@@ -10,13 +10,20 @@ describe('Central de Atendimento ao Cliente TAT', function() {
   it('preenche os campos obrigatórios e envia o formulário', function() {
     const longText = 'teste, teste, teste, teste,teste, teste, teste, teste, teste, teste, teste, teste'
 
+    cy.clock() //congela o relógio do navegador
+
     cy.get('#firstName').type('Bruna')
     cy.get('#lastName').type('Abreu')
     cy.get('#email').type('brunasantosdeabreu@outlook.com')
     cy.get('#open-text-area').type(longText, {delay: 0}) // exercício extra 1 
     cy.get('button[type="submit"]').click()
 
-    cy.get('.success').should('be.visible')
+    cy.get('.success').should('be.visible') // verifica que a mensagem de sucesso está visível
+
+    cy.tick(3000) // avançando o relógio do navegador em 3milissegundos para não precisar esperar
+
+    cy.get('.success').should('not.be.visible') // verifica que após os 3mls, a mensagem de sucesso não seja exibida mais
+
   })
   // exercício extra 2
   it('exibe mensagem de erro ao submeter o formulário com um email com formatação inválida' , function() {
@@ -189,8 +196,46 @@ describe('Central de Atendimento ao Cliente TAT', function() {
   })
   // Exercício extra 2 - Desafio > feito no arquivo privacy.spec.js
 
+  // Aula 12 - invoke e hide
+    it('exibe e oculta as mensagens de sucesso e erro usando .invoke()', () => {
+      cy.get('.success') //pega o elemento com a classe success
+        .should('not.be.visible') // e verifica que ele não está visível
+        .invoke('show') //mostra a mensagem
+        .should('be.visible') // valida que a mensagem está visível
+        .and('contain', 'Mensagem enviada com sucesso.') // valida a mensagem de texto
+        .invoke('hide') // oculta a mensagem
+        .should('not.be.visible') // valida que a mensagem não está mais visível
+      cy.get('.error')
+        .should('not.be.visible')
+        .invoke('show')
+        .should('be.visible')
+        .and('contain', 'Valide os campos obrigatórios!')
+        .invoke('hide')
+        .should('not.be.visible')
+    })
+    
+    it('preenche a área de texto usando o comando invoke', function() {
+      const longText = Cypress._.repeat('0123456789', 20) // ao invés de declarar uma variável para preencher um campo várias vezes (repetindo a variável), essa é uma forma mais enxuta de fazer isso
 
-
-
+      cy.get('#open-text-area')
+        .invoke('val', longText) //invoka o valor e seta aqui o texto definido na variável acima
+        .should('have.value', longText) //valida que é o texto que foi definido ali em cima na variável
+    })
+    // Comandos cy.request (nível de rede) - teste via API
+    it('faz uma requisição HTTP', function() {
+        cy.request('https://cac-tat-v3.s3.eu-central-1.amazonaws.com/index.html') // URL que será feita  requisição
+          .should(function(response) { // should pra fazer a verificação, recebe como argumento uma função de callback que recebe a resposta dessa requisição
+              const {status, statusText, body} = response // declarando variáveis, destruturação do objeto
+              expect(status).to.equal(200) // verificação
+              expect(statusText).to.equal('OK') // verificação
+              expect(body).to.include('CAC TAT') // verificação
+          })
+    })
+    // Desafio, encontrar o gato
+    it.only('Encontrar o gato escondido', function() {
+      cy.get('#cat') // o hash identica como id do elemento
+      .invoke('show') // invoka para mostrar o gato
+      .should('be.visible') // verifica que ele está sendo exibido ou visível
+    })
 
 })
